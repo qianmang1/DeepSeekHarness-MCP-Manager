@@ -1,7 +1,7 @@
 # dsh-mcp-manager
 
 > [!IMPORTANT]
-> **Adapted fork (v3.0.0)**: this repository is a compatibility fork of [xxxyz/DeepSeekHarness-MCP-Manager](https://github.com/xxxyz/DeepSeekHarness-MCP-Manager) (upstream, MIT), adapted for the latest **DeepSeek Harness 0.2.1-alpha.1**. Key changes: rewritten home-path discovery for the new `settings.prepareDocument()` semantics, compatibility with the target-based fs service, browser half no longer depends on the (client-side absent) `timer` service, and `dsh-tools` peer raised to `^0.2.1-alpha.1` to pass the new install-time compatibility gate. See [docs/developer-guide.md · adaptation notes](docs/developer-guide.md). The npm package name stays `@xxxyz/dsh-mcp-manager` (the loader row and double-mount guard key on that identifier); thanks to upstream author [@xxxyz](https://github.com/xxxyz).
+> **Adapted fork (v3.0.1)**: this repository is a compatibility fork of [xxxyz/DeepSeekHarness-MCP-Manager](https://github.com/xxxyz/DeepSeekHarness-MCP-Manager) (upstream, MIT), adapted for **DeepSeek Harness 0.2.x** (passes the install-time compatibility gate on both 0.2.0-rc.2 and 0.2.1-alpha.1; APIs verified against the 0.2.1-alpha.1 source tree). Key changes: rewritten home-path discovery for the new `settings.prepareDocument()` semantics, compatibility with the target-based fs service, browser half no longer depends on the (client-side absent) `timer` service, and `dsh-tools` peer relaxed to `^0.2.0-rc.2`. See [docs/developer-guide.md · adaptation notes](docs/developer-guide.md). The npm package name stays `@xxxyz/dsh-mcp-manager` (the loader row and double-mount guard key on that identifier); thanks to upstream author [@xxxyz](https://github.com/xxxyz).
 
 <!-- Hero -->
 <div align="center">

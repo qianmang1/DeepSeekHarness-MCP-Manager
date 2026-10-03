@@ -1,6 +1,6 @@
 {
   "name": "@xxxyz/dsh-mcp-manager",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "DSH-standard MCP manager plugin (adapted for DSH 0.2.x): Settings UI + HTTP API + model-facing mcp_manager_* tools. Install with one command: dsh plugin --profile web add @xxxyz/dsh-mcp-manager@latest",
   "type": "module",
   "main": "lib/index.js",
@@ -61,7 +61,7 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-tools": "^0.2.1-alpha.1",
+    "@deepseek-ai/dsh-tools": "^0.2.0-rc.2",
     "react": "^18.2.0"
   },
   "devDependencies": {
