@@ -19,6 +19,13 @@ import { createRequire } from 'node:module'
 // Minimal structural types for the service surfaces this plugin touches.
 // The full contracts live in the corresponding @deepseek-ai packages; these
 // local interfaces keep the build dependency surface small.
+//
+// NOTE (DSH ≥0.2.x): the fs service is TARGET-based — resolve() returns an
+// opaque target object (not a path string) and every other method consumes
+// that target. This plugin always uses the resolve→use pattern, so it is
+// compatible with both the old path-based and the new target-based contract;
+// writeText's 3rd/4th parameters are now a write-intent guard and an abort
+// signal (the 5th remains the sandbox policy).
 // ---------------------------------------------------------------------------
 
 interface HttpReq {
@@ -34,19 +41,21 @@ interface HttpRes {
 }
 
 interface FsService {
-  resolve(path: string): Promise<string>
-  stat(path: string): Promise<{ isFile(): boolean; isDirectory(): boolean } | undefined>
-  readText(path: string): Promise<string>
-  writeText(path: string, content: string, encoding?: unknown, flag?: unknown, policy?: unknown): Promise<void>
-  listDir(path: string): Promise<Array<{ name: string }>>
+  resolve(path: string): Promise<unknown>
+  stat(target: unknown): Promise<{ isFile(): boolean; isDirectory(): boolean } | undefined>
+  readText(target: unknown): Promise<string>
+  writeText(target: unknown, content: string, expected?: unknown, signal?: unknown, policy?: unknown): Promise<void>
+  listDir(target: unknown): Promise<Array<{ name: string }>>
 }
 
 interface SettingsService {
+  /** DSH ≥0.2.x: the active profile's cordis.patch.yml path. */
   prepareDocument(): Promise<unknown>
 }
 
+/** Synchronous in DSH ≥0.2.x (an await on the plain result is harmless). */
 interface SandboxPolicyService {
-  resolve(options: { mode: string }): Promise<unknown>
+  resolve(options: { mode: string }): unknown
 }
 
 interface WebServerService {
@@ -427,23 +436,46 @@ export default {
     }
 
     // ---------- path discovery ----------
-    // Known limitation: profile detection probes 'web' then 'headless' by
-    // presence of profiles/<name>/cordis.patch.yml, then falls back to any
-    // profile that has one, and finally to 'web'. A profile whose directory
-    // name matches none of these and has no patch file yet is not detected.
+    // DSH ≥0.2.x: settings.prepareDocument() returns the ACTIVE PROFILE's patch
+    // path (<home>/profiles/<profile>/cordis.patch.yml — the config editor's
+    // document), so every path derives directly from it. Older DSH returned a
+    // home-level document; that layout is detected (document not shaped like
+    // <home>/profiles/<profile>/cordis.patch.yml) and the legacy probe runs:
+    // profile detection probes 'web' then 'headless' by presence of
+    // profiles/<name>/cordis.patch.yml, then falls back to any profile that has
+    // one, and finally to 'web'. A profile whose directory name matches none of
+    // these and has no patch file yet is not detected (legacy layouts only).
     let cached: { home: string; profileDir: string; profileName: string; projectPatch: string; globalPatch: string } | null = null
     async function ensurePaths() {
       if (cached) return cached
-      let home: string | null = null
+      let doc: string | null = null
       try {
-        const doc = await settings.prepareDocument()
-        if (typeof doc === 'string' && doc) {
-          const i = Math.max(doc.lastIndexOf('\\'), doc.lastIndexOf('/'))
-          home = i > 0 ? doc.slice(0, i) : doc
-        }
+        const d = await settings.prepareDocument()
+        if (typeof d === 'string' && d) doc = d
       } catch (e) { /* ignore */ }
-      if (!home) throw new Error('无法确定 DSH 主目录（settings.prepareDocument 未返回路径）')
-      const sep = home.indexOf('\\') >= 0 ? '\\' : '/'
+      if (!doc) throw new Error('无法确定 DSH 主目录（settings.prepareDocument 未返回路径）')
+      const base = (() => {
+        const i = Math.max(doc!.lastIndexOf('\\'), doc!.lastIndexOf('/'))
+        return i > 0 ? doc!.slice(0, i) : doc!
+      })()
+      const seg = doc!.split(/[\\/]/)
+      const sep = doc!.indexOf('\\') >= 0 ? '\\' : '/'
+      // Profile-patch shape: <…>/profiles/<profile>/cordis.patch.yml — dirname is
+      // the profile dir, two levels up is the DSH home, and the document itself
+      // is the project patch.
+      if (seg.length >= 4 && seg[seg.length - 1] === 'cordis.patch.yml' && seg[seg.length - 3] === 'profiles') {
+        const home = seg.slice(0, seg.length - 3).join(sep)
+        cached = {
+          home,
+          profileDir: base,
+          profileName: seg[seg.length - 2],
+          projectPatch: doc!,
+          globalPatch: home + sep + 'cordis.patch.yml',
+        }
+        return cached
+      }
+      // Legacy layout: the document's parent is the DSH home — probe profiles.
+      const home = base
       let profileDir: string | null = null
       let profileName = 'web'
       for (const name of ['web', 'headless']) {

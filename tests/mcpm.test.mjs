@@ -11,9 +11,13 @@ import plugin from '../lib/index.js'
 // Fake Cordis ctx exposing exactly the surfaces the plugin touches. Same shape
 // as skills.test.mjs, extended with `config` for the token gate and
 // `tools.schemas` for the live tool-count in mcpm-list.
+//
+// Mirrors the DSH ≥0.2.x service contracts: settings.prepareDocument returns
+// the PROFILE patch path, sandboxPolicy.resolve is synchronous, and the fs
+// service is target-based (resolve() hands out opaque targets consumed by
+// stat/readText/writeText/listDir).
 function makeCtx(home, files, config) {
   files = files || new Map()
-  if (!files.has(join(home, 'settings.yaml'))) files.set(join(home, 'settings.yaml'), '')
   if (!files.has(join(home, 'profiles', 'web', 'cordis.patch.yml'))) files.set(join(home, 'profiles', 'web', 'cordis.patch.yml'), '[]\n')
   if (!files.has(join(home, 'cordis.patch.yml'))) files.set(join(home, 'cordis.patch.yml'), '[]\n')
   let route = null
@@ -21,18 +25,18 @@ function makeCtx(home, files, config) {
   const ctx = {
     timer: {},
     timeout: () => Promise.resolve(),
-    settings: { prepareDocument: async () => join(home, 'settings.yaml') },
-    sandboxPolicy: { resolve: async () => ({}) },
+    settings: { prepareDocument: async () => join(home, 'profiles', 'web', 'cordis.patch.yml') },
+    sandboxPolicy: { resolve: () => ({}) },
     tools: { register() {}, schemas: () => [] },
     webServer: { register(r) { route = r; return () => {} } },
     fs: {
-      async resolve(p) { return p },
-      async stat(p) { return files.has(p) ? { isFile: () => true, isDirectory: () => false } : undefined },
-      async readText(p) {
-        if (!files.has(p)) { const e = new Error('not found'); e.code = 'FS_NOT_FOUND'; throw e }
-        return files.get(p)
+      async resolve(p) { return { targetKey: p, displayPath: p } },
+      async stat(t) { return files.has(t.targetKey) ? { isFile: () => true, isDirectory: () => false } : undefined },
+      async readText(t) {
+        if (!files.has(t.targetKey)) { const e = new Error('not found'); e.code = 'FS_NOT_FOUND'; throw e }
+        return files.get(t.targetKey)
       },
-      async writeText(p, c) { files.set(p, String(c)) },
+      async writeText(t, c) { files.set(t.targetKey, String(c)) },
       async listDir() { return [] },
     },
     effect(fn) { const d = fn(); if (typeof d === 'function') d() },

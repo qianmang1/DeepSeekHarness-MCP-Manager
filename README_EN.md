@@ -1,5 +1,8 @@
 # dsh-mcp-manager
 
+> [!IMPORTANT]
+> **Adapted fork (v3.0.0)**: this repository is a compatibility fork of [xxxyz/DeepSeekHarness-MCP-Manager](https://github.com/xxxyz/DeepSeekHarness-MCP-Manager) (upstream, MIT), adapted for the latest **DeepSeek Harness 0.2.1-alpha.1**. Key changes: rewritten home-path discovery for the new `settings.prepareDocument()` semantics, compatibility with the target-based fs service, browser half no longer depends on the (client-side absent) `timer` service, and `dsh-tools` peer raised to `^0.2.1-alpha.1` to pass the new install-time compatibility gate. See [docs/developer-guide.md · adaptation notes](docs/developer-guide.md). The npm package name stays `@xxxyz/dsh-mcp-manager` (the loader row and double-mount guard key on that identifier); thanks to upstream author [@xxxyz](https://github.com/xxxyz).
+
 <!-- Hero -->
 <div align="center">
   <b style="font-size: 1.15em;">Manage every MCP server and skill in DeepSeek Harness from one settings page — install, configure, monitor.</b><br /><br />

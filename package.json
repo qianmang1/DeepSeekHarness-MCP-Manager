@@ -1,7 +1,7 @@
 {
   "name": "@xxxyz/dsh-mcp-manager",
-  "version": "2.2.7",
-  "description": "DSH-standard MCP manager plugin: Settings UI + HTTP API + model-facing mcp_manager_* tools. Install with one command: dsh plugin --profile web add @xxxyz/dsh-mcp-manager@latest",
+  "version": "3.0.0",
+  "description": "DSH-standard MCP manager plugin (adapted for DSH 0.2.x): Settings UI + HTTP API + model-facing mcp_manager_* tools. Install with one command: dsh plugin --profile web add @xxxyz/dsh-mcp-manager@latest",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -40,11 +40,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xxxyz/DeepSeekHarness-MCP-Manager.git"
+    "url": "git+https://github.com/qianmang1/DeepSeekHarness-MCP-Manager.git"
   },
-  "homepage": "https://github.com/xxxyz/DeepSeekHarness-MCP-Manager",
+  "homepage": "https://github.com/qianmang1/DeepSeekHarness-MCP-Manager",
   "bugs": {
-    "url": "https://github.com/xxxyz/DeepSeekHarness-MCP-Manager/issues"
+    "url": "https://github.com/qianmang1/DeepSeekHarness-MCP-Manager/issues"
   },
   "dsh": {
     "bundle": {
@@ -61,12 +61,12 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-tools": "^0.1.2-rc.1",
+    "@deepseek-ai/dsh-tools": "^0.2.1-alpha.1",
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-tools": "^0.1.2-rc.1",
+    "@deepseek-ai/cordis": "^4.0.5-alpha.1",
+    "@deepseek-ai/dsh-tools": "^0.2.1-alpha.1",
     "@types/node": "^24.0.0",
     "typescript": "^6.0.0"
   },

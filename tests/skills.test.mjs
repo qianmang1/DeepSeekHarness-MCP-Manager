@@ -42,27 +42,30 @@ function makeSkills() {
 }
 
 // Fake Cordis ctx exposing exactly the surfaces the plugin touches.
+// Mirrors the DSH ≥0.2.x service contracts: settings.prepareDocument returns
+// the PROFILE patch path, sandboxPolicy.resolve is synchronous, and the fs
+// service is target-based (resolve() hands out opaque targets consumed by
+// stat/readText/writeText/listDir).
 function makeCtx(home, skills, files) {
   files = files || new Map()
-  if (!files.has(join(home, 'settings.yaml'))) files.set(join(home, 'settings.yaml'), '')
   if (!files.has(join(home, 'profiles', 'web', 'cordis.patch.yml'))) files.set(join(home, 'profiles', 'web', 'cordis.patch.yml'), '')
   let route = null
   const listeners = new Map()
   const ctx = {
     timer: {},
     timeout: () => Promise.resolve(),
-    settings: { prepareDocument: async () => join(home, 'settings.yaml') },
-    sandboxPolicy: { resolve: async () => ({}) },
+    settings: { prepareDocument: async () => join(home, 'profiles', 'web', 'cordis.patch.yml') },
+    sandboxPolicy: { resolve: () => ({}) },
     tools: { register() {}, schemas: () => [] },
     webServer: { register(r) { route = r; return () => {} } },
     fs: {
-      async resolve(p) { return p },
-      async stat(p) { return files.has(p) ? { isFile: () => true, isDirectory: () => false } : undefined },
-      async readText(p) {
-        if (!files.has(p)) { const e = new Error('not found'); e.code = 'FS_NOT_FOUND'; throw e }
-        return files.get(p)
+      async resolve(p) { return { targetKey: p, displayPath: p } },
+      async stat(t) { return files.has(t.targetKey) ? { isFile: () => true, isDirectory: () => false } : undefined },
+      async readText(t) {
+        if (!files.has(t.targetKey)) { const e = new Error('not found'); e.code = 'FS_NOT_FOUND'; throw e }
+        return files.get(t.targetKey)
       },
-      async writeText(p, c) { files.set(p, String(c)) },
+      async writeText(t, c) { files.set(t.targetKey, String(c)) },
       async listDir() { return [] },
     },
     effect(fn) { const d = fn(); if (typeof d === 'function') d() },
@@ -173,7 +176,7 @@ test('skill-list merges user-level filesystem skills with source user-dsh', asyn
   const skills = makeSkills()
   skills.seed('brainstorming', { description: 'Idea design', source: 'superpowers', provider: 'superpowers' })
   const ctx = makeCtx(home, skills, files)
-  ctx.fs.listDir = async (p) => (p === skillsDir ? [{ name: 'checking-dsh-plugin-updates' }] : [])
+  ctx.fs.listDir = async (t) => (t.displayPath === skillsDir ? [{ name: 'checking-dsh-plugin-updates' }] : [])
   process.env.DSH_MCP_MANAGER_SKILLS_DIR = skillsDir
   try {
     plugin.apply(ctx)
@@ -200,7 +203,7 @@ test('skill-toggle rejects user-level filesystem skills (view-only; scoped layer
   const skillMdPath = join(skillsDir, 'my-user-skill', 'SKILL.md')
   files.set(skillMdPath, md)
   const ctx = makeCtx(home, makeSkills(), files)
-  ctx.fs.listDir = async (p) => (p === skillsDir ? [{ name: 'my-user-skill' }] : [])
+  ctx.fs.listDir = async (t) => (t.displayPath === skillsDir ? [{ name: 'my-user-skill' }] : [])
   process.env.DSH_MCP_MANAGER_SKILLS_DIR = skillsDir
   try {
     plugin.apply(ctx)
@@ -236,7 +239,7 @@ test('ensureRestored drops stale user-skill state entries without writing files'
   const stateFile = join(home, 'profiles', 'web', 'dsh-skill-manager.json')
   files.set(stateFile, JSON.stringify({ version: 1, disabledSkills: ['my-user-skill'] }))
   const ctx = makeCtx(home, makeSkills(), files)
-  ctx.fs.listDir = async (p) => (p === skillsDir ? [{ name: 'my-user-skill' }] : [])
+  ctx.fs.listDir = async (t) => (t.displayPath === skillsDir ? [{ name: 'my-user-skill' }] : [])
   process.env.DSH_MCP_MANAGER_SKILLS_DIR = skillsDir
   try {
     plugin.apply(ctx)
@@ -265,7 +268,7 @@ test('user-skills scan mirrors official registry: frontmatter name+description r
   files.set(join(skillsDir, 'no-description', 'SKILL.md'), '---\nname: no-description\n---\nbody')
   files.set(join(skillsDir, 'Bad_Name', 'SKILL.md'), '---\nname: Bad_Name\ndescription: non kebab name\n---\nbody')
   const ctx = makeCtx(home, makeSkills(), files)
-  ctx.fs.listDir = async (p) => (p === skillsDir ? [{ name: 'no-name-dir' }, { name: 'no-description' }, { name: 'Bad_Name' }] : [])
+  ctx.fs.listDir = async (t) => (t.displayPath === skillsDir ? [{ name: 'no-name-dir' }, { name: 'no-description' }, { name: 'Bad_Name' }] : [])
   process.env.DSH_MCP_MANAGER_SKILLS_DIR = skillsDir
   try {
     plugin.apply(ctx)
@@ -296,7 +299,7 @@ test('skill-list includes flat .md files in the user skills root (official parit
   // official boolean grammar: true/1/yes/on vs false/0/no/off — anything else skips the entry
   files.set(join(skillsDir, 'bad-bool', 'SKILL.md'), '---\nname: bad-bool\ndescription: bad boolean\nuser-invocable: maybe\n---\nbody')
   const ctx = makeCtx(home, makeSkills(), files)
-  ctx.fs.listDir = async (p) => (p === skillsDir ? [{ name: 'flat-skill.md' }, { name: 'inv-off' }, { name: 'legacy' }, { name: 'bad-bool' }, { name: '.system' }] : [])
+  ctx.fs.listDir = async (t) => (t.displayPath === skillsDir ? [{ name: 'flat-skill.md' }, { name: 'inv-off' }, { name: 'legacy' }, { name: 'bad-bool' }, { name: '.system' }] : [])
   process.env.DSH_MCP_MANAGER_SKILLS_DIR = skillsDir
   try {
     plugin.apply(ctx)

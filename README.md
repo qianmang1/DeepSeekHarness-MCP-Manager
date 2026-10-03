@@ -1,5 +1,8 @@
 # dsh-mcp-manager
 
+> [!IMPORTANT]
+> **Fork 适配版（v3.0.0）**：本仓库是 [xxxyz/DeepSeekHarness-MCP-Manager](https://github.com/xxxyz/DeepSeekHarness-MCP-Manager)（上游，MIT）的兼容性适配版，针对最新版 **DeepSeek Harness 0.2.1-alpha.1** 完成适配。主要变更：`settings.prepareDocument()` 新语义下的路径推导重写、fs 服务 target 化兼容、浏览器端移除不存在的 `timer` 服务依赖（改用原生定时器）、`dsh-tools` peer 依赖提升至 `^0.2.1-alpha.1`（通过新版安装期兼容检查）。详见 [docs/developer-guide.md · 适配记录](docs/developer-guide.md)。npm 包名保持 `@xxxyz/dsh-mcp-manager` 不变（loader 行与双挂载 guard 依赖该标识）；感谢上游作者 [@xxxyz](https://github.com/xxxyz)。
+
 <!-- Hero -->
 <div align="center">
   <b style="font-size: 1.15em;">DeepSeek Harness 的 MCP 服务与技能管理器：装没装、连没连、一页管完。</b><br /><br />
